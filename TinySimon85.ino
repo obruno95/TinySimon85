@@ -36,7 +36,7 @@ const int beat = 250;
 const int maximum = 32;
 
 // Buttons:         Blue  Yellow   Green  Red
-int pins[] = { 1,     0,     3,     4};
+int pins[] = { 2,     0,     3,     4};
 
 // Notes:             E4  C#4 A4  E3
 int notes[] = { 52, 49, 57, 40 };
@@ -49,7 +49,7 @@ int sequence[maximum];
 const uint8_t scale[] PROGMEM = {239, 226, 213, 201, 190, 179, 169, 160, 151, 142, 134, 127};
 
 void note (int n, int octave) {
-  DDRB = DDRB | 1 << DDB2;                   // PB2 as output (buzzer)
+   DDRB = DDRB | 1 << DDB1;                   // PB1 as output (buzzer)
   int prescaler = 11 - (octave + n / 12);
   if (prescaler < 1 || prescaler > 7) prescaler = 0;
   OCR1C = pgm_read_byte(&scale[n % 12]) - 1;
