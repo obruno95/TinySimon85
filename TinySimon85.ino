@@ -49,11 +49,12 @@ int sequence[maximum];
 const uint8_t scale[] PROGMEM = {239, 226, 213, 201, 190, 179, 169, 160, 151, 142, 134, 127};
 
 void note (int n, int octave) {
-   DDRB = DDRB | 1 << DDB1;                   // PB1 as output (buzzer)
-  int prescaler = 11 - (octave + n / 12);
-  if (prescaler < 1 || prescaler > 7) prescaler = 0;
+  DDRB = DDRB | 1<<DDB1;                     // PB1 (Arduino 1) as output
+  TCCR1 = 0x90 | (8-octave); // for 1MHz clock
+  // TCCR1 = 0x90 | (11-octave); // for 8MHz clock
   OCR1C = pgm_read_byte(&scale[n % 12]) - 1;
-  TCCR1 = 1 << CTC1 | 1 << COM1A0 | prescaler;
+  delay(duration);
+  TCCR1 = 0x90;              // stop the counter
 }
 
 // Button routines **********************************************
@@ -139,7 +140,7 @@ void simon () {
   int turn = 0;
   sequence[0] = random(4);
   do {
-    for (int n = 0; n <= turn; n++) {
+    for (int n = 0; n < = turn; n++) {
       delay(beat);
       flashbeep(sequence[n]);
     }
@@ -198,7 +199,7 @@ void sleep()
 void setup() {
 
   // Set up pin change interrupts for buttons
-  PCMSK = 1 << PINB1 | 1 << PINB0 | 1 << PINB3 | 1 << PINB4;
+  PCMSK = 1 << PINB2 | 1 << PINB0 | 1 << PINB3 | 1 << PINB4;
 
   // Disable ADC - saves about 324.5uA in sleep mode!
   ADCSRA = 0;
@@ -232,34 +233,6 @@ void setup() {
       echo();
       break;
   }
-
-
-
-
-  /*
-    if (millis() > 5000) {       //if inactive for 5s sleep
-      for (int b = 0; b < 4; b++) {
-        button_off(b);
-      }
-    }
-    sleep();
-  */
-
-  /*
-    // Wait for button to select game
-    int game = 0;
-    do {
-      game = (game + 1) % 4;
-      if (millis() > 10000) sleep();
-    } while (digitalRead(pins[game]));
-    randomSeed(millis());
-    delay(250);
-    if (game == 3) simon();
-    else if (game == 2) echo();
-    else if (game == 1) quiz();
-    //  else confusion();
-  */
-  //simon();
 }
 
 // Only reset should wake us now
