@@ -1,37 +1,59 @@
-/* GameBone Handheld Electronic Game
+/* Tiny Simon - with ATTiny85
 
-   David Johnson-Davies - www.technoblogy.com - 23rd January 2017
-   ATtiny85 @ 1 MHz (internal oscillator; BOD disabled)
-   
-   CC BY 4.0
-   Licensed under a Creative Commons Attribution 4.0 International license: 
-   http://creativecommons.org/licenses/by/4.0/
+    Based on: #1 Simon (Genius) game -by Hasbro
+              #2 GameBone Handheld Electronic Game -by David Johnson-Davies
+              #3 Simon game with ATtiny13 -by Vojtak
+
+    Simon game developed on ATTiny85 microcontroller to Arduino Day SP 2019.
+
+    -----------------------------------------------------
+
+    Mini Genius - com ATTiny85
+
+    Inspirado em: #1 Simon (Genius) game -by Hasbro
+                  #2 GameBone Handheld Electronic Game -by David Johnson-Davies
+                  #3 Simon game with ATtiny13 -by Vojtak
+
+    Jogo Genius desenvolvido no microcontrolador ATTiny85 para o Arduino Day SP 2019.
+
+            ATMEL ATTINY85
+
+        Reset  1| \/ |8  5Vcc
+    Ain3  PB3  2|    |7  PB2  Ain1
+    Ain2  PB4  3|    |6  PB1  pwm1
+          GND  4|    |5  PB0  pwm0
+
+
+    by Bruno Silveira
+    Mar/2019
 */
 
 #include <avr/sleep.h>
 #include <avr/power.h>
+#include <avr/interrupt.h>
 
 const int beat = 250;
 const int maximum = 32;
 
-// Buttons:    Blue   Orange Red    Green
-int pins[] = { 2,     0,     3,     4};
+// Buttons:         Blue  Yellow   Green  Red
+int pins[] = { 1,     0,     3,     4};
 
-// Notes:       E4  C#4 A4  E3
+// Notes:             E4  C#4 A4  E3
 int notes[] = { 52, 49, 57, 40 };
+//int buzzer = 2;
 
 int sequence[maximum];
 
 // Simple Tones **********************************************
 
-const uint8_t scale[] PROGMEM = {239,226,213,201,190,179,169,160,151,142,134,127};
+const uint8_t scale[] PROGMEM = {239, 226, 213, 201, 190, 179, 169, 160, 151, 142, 134, 127};
 
 void note (int n, int octave) {
-  DDRB = DDRB | 1<<DDB1;                     // PB1 (Arduino 1) as output
-  int prescaler = 8 - (octave + n/12);
-  if (prescaler<1 || prescaler>7) prescaler = 0;
+  DDRB = DDRB | 1 << DDB2;                   // PB2 as output (buzzer)
+  int prescaler = 11 - (octave + n / 12);
+  if (prescaler < 1 || prescaler > 7) prescaler = 0;
   OCR1C = pgm_read_byte(&scale[n % 12]) - 1;
-  TCCR1 = 1<<CTC1 | 1<<COM1A0 | prescaler;
+  TCCR1 = 1 << CTC1 | 1 << COM1A0 | prescaler;
 }
 
 // Button routines **********************************************
@@ -52,7 +74,19 @@ void button_off (int button) {
   int p = pins[button];
   pinMode(p, INPUT_PULLUP);
 }
-  
+
+void allon() {
+  for (int b = 0; b < 4; b++) {
+    button_on(b);
+  }
+}
+
+void alloff() {
+  for (int b = 0; b < 4; b++) {
+    button_off(b);
+  }
+}
+
 // Flash an LED and play the corresponding note of the correct frequency
 void flashbeep (int button) {
   button_on(button);
@@ -62,24 +96,15 @@ void flashbeep (int button) {
   button_off(button);
 }
 
-// Play a note and flash the wrong button
-void misbeep (int button) {
-  int wrong = (button + random(3) + 1) % 4;
-  button_on(wrong);
-  note(notes[button], 0);
-  delay(beat);
-  note(0, 0);
-  button_off(wrong);
-}
 
 // Wait until a button is pressed and play it
 int check () {
-  GIMSK = GIMSK | 1<<PCIE;            // Enable pin change interrupt
+  GIMSK = GIMSK | 1 << PCIE;          // Enable pin change interrupt
   sleep();
-  GIMSK = GIMSK & ~(1<<PCIE);         // Disable pin change interrupt
+  GIMSK = GIMSK & ~(1 << PCIE);       // Disable pin change interrupt
   int button = 0;
   do {
-    button = (button+1) % 4;
+    button = (button + 1) % 4;
   } while (digitalRead(pins[button]));
   flashbeep(button);
   return button;
@@ -97,9 +122,14 @@ void success_sound () {
 }
 
 void fail_sound () {
+  allon();
   note(51, 0); delay(125);
+  alloff();
   note(0, 0);  delay(125);
+
+  allon();
   note(48, 0); delay(375);
+  alloff();
   note(0, 0);
 }
 
@@ -109,14 +139,17 @@ void simon () {
   int turn = 0;
   sequence[0] = random(4);
   do {
-    for (int n=0; n<=turn; n++) {
-      delay(beat); 
+    for (int n = 0; n <= turn; n++) {
+      delay(beat);
       flashbeep(sequence[n]);
     }
-    for (int n=0; n<=turn; n++) {
-      if (check() != sequence[n]) { fail_sound(); return; }
+    for (int n = 0; n <= turn; n++) {
+      if (check() != sequence[n]) {
+        fail_sound();
+        return;
+      }
     }
-    sequence[turn+1] = (sequence[turn] + random(3) + 1) % 4;
+    sequence[turn + 1] = (sequence[turn] + random(0, 2) + 1) % 4;
     turn++;
     delay(beat);
   } while (turn < maximum);
@@ -129,10 +162,13 @@ void echo () {
   int turn = 0;
   sequence[turn] = check();
   do {
-    for (int n=0; n<=turn; n++) {
-      if (check() != sequence[n]) { fail_sound(); return; }
+    for (int n = 0; n <= turn; n++) {
+      if (check() != sequence[n]) {
+        fail_sound();
+        return;
+      }
     }
-    sequence[turn+1] = check();
+    sequence[turn + 1] = check();
     turn++;
     delay(beat);
   } while (turn < maximum);
@@ -150,61 +186,83 @@ void quiz () {
   } while (1);
 }
 
-// Confusion **********************************************
-
-void confusion () {
-  int turn = 0;
-  sequence[0] = random(4);
-  do {
-    for (int n=0; n<=turn; n++) {
-      delay(beat);
-      if (turn > 1 && n < turn) misbeep(sequence[n]);
-      else flashbeep(sequence[n]);
-    }
-    for (int n=0; n<=turn; n++) {
-      if (check() != sequence[n]) { fail_sound(); return; }
-    }
-    sequence[turn+1] = (sequence[turn] + random(3) + 1) % 4;
-    turn++;
-    delay(beat);
-  } while (turn < maximum);
-  success_sound();
-}
 
 // Setup and loop **********************************************
 
-void sleep(void)
+void sleep()
 {
   sleep_enable();
   sleep_cpu();
 }
 
 void setup() {
+
   // Set up pin change interrupts for buttons
-  PCMSK = 1<<PINB0 | 1<<PINB2 | 1<<PINB3 | 1<<PINB4;
-  ADCSRA &= ~(1<<ADEN); // Disable ADC to save power
+  PCMSK = 1 << PINB1 | 1 << PINB0 | 1 << PINB3 | 1 << PINB4;
+
+  // Disable ADC - saves about 324.5uA in sleep mode!
+  ADCSRA = 0;
   set_sleep_mode(SLEEP_MODE_PWR_DOWN);
+
   // After reset flash all four lights
-  for (int button=0; button<4; button++) {
-    button_on(button);
+  for (int b = 0; b < 4; b++) {
+    button_on(b);
     delay(100);
-    button_off(button);
+    button_off(b);
   }
+
   // Wait for button to select game
   int game = 0;
   do {
-    game = (game+1) % 4;
-    if (millis() > 10000) sleep();
+    game = (game + 1) % 4;
+    if (millis() > 5000) sleep();
   } while (digitalRead(pins[game]));
+
   randomSeed(millis());
   delay(250);
-  if (game == 3) simon();
-  else if (game == 2) echo();
-  else if (game == 1) quiz();
-  else confusion();
+
+  switch (game) {
+    case 0:     //blue
+      simon();
+      break;
+    case 1:     //yellow
+      quiz();
+      break;
+    case 2:   //green
+      echo();
+      break;
+  }
+
+
+
+
+  /*
+    if (millis() > 5000) {       //if inactive for 5s sleep
+      for (int b = 0; b < 4; b++) {
+        button_off(b);
+      }
+    }
+    sleep();
+  */
+
+  /*
+    // Wait for button to select game
+    int game = 0;
+    do {
+      game = (game + 1) % 4;
+      if (millis() > 10000) sleep();
+    } while (digitalRead(pins[game]));
+    randomSeed(millis());
+    delay(250);
+    if (game == 3) simon();
+    else if (game == 2) echo();
+    else if (game == 1) quiz();
+    //  else confusion();
+  */
+  //simon();
 }
 
 // Only reset should wake us now
 void loop() {
- sleep();
+  sleep();
 }
