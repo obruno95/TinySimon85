@@ -24,7 +24,7 @@
           GND  4|    |5  PB0  pwm0
 
 
-    by Bruno Silveira
+    by Bruno Silveira ft. Tiago Aro
     Mar/2019
 */
 
