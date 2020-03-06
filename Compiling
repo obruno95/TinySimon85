@@ -1,0 +1,10 @@
+I compiled the program using Uno as ISP and Spence Konde's ATTiny Core (https://github.com/SpenceKonde/ATTinyCore)
+
+* Select the ATtinyx5 series option under the ATtiny Universal heading on the Boards menu
+  * Timer 1 Clock: CPU
+  * B.O.D. Disabled
+  * ATtiny85
+  * 1 MHz (internal) 
+  
+ This is the default fuse setting on new ATtiny85s; 
+ otherwise choose Burn Bootloader to set the fuses appropriately.
