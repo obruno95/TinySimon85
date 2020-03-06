@@ -27,17 +27,17 @@ The game can run in 3 modes
 • Quiz: This uses the tinySimon for quiz games of up to 4 players. Each player has a button; the questionmaster reads a question out, and as soon as one player thinks they know the answer they press their button. Their tone sounds, and the light stays on for three seconds to confirm who got in first. The lights are then cleared ready for the next round.
 
 ** Components:
-• 1x tinySimon85 PCB
-• 1x ATtiny85 
-• 4x LED (blue, yellow, green, red)
-• 4x 56R resistor
-• 5x push-button
-• 1x 3V active buzzer
-• 1x Capacitor 10uf
-• 1x 3V Lithium button cell (CR2032)
+- 1x tinySimon85 PCB
+- 1x ATtiny85 
+- 4x LED (blue, yellow, green, red)
+- 4x 56R resistor
+- 5x push-button
+- 1x 3V active buzzer
+- 1x Capacitor 10uf
+- 1x 3V Lithium button cell (CR2032)
 
 
 Based on: 
-• Simon (Genius) game (by Hasbro)
-• GameBone Handheld Electronic Game (by David Johnson-Davies)
-• Simon game with ATtiny13 (by Vojtak)
+- Simon (Genius) game (by Hasbro)
+- GameBone Handheld Electronic Game (by David Johnson-Davies)
+- Simon game with ATtiny13 (by Vojtak)
